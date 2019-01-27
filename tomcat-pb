@@ -1,6 +1,4 @@
-first below data save in one file in your dashboard and give the file name in playbook  
-- name: create systemd for tomcat
-  copy: src=/home/kadhar/playbooks/tomcat_systemd dest=/usr/lib/systemd/system/tomcat9.service 
+first below data save in one file in your dashboard ( means save this file in your machine ) and give the file name in playbook  
    
 vim /usr/lib/systemd/system/tomcat9.service 
 
@@ -21,7 +19,13 @@ Group=tomcat
 [Install]
 WantedBy=multi-user.target
 :wq
-systemctl daemon-reload,  systemctl enable tomcat9, systemctl start tomcat9, systemctl status tomcat9.
+
+systemctl daemon-reload,  
+systemctl enable tomcat9, 
+systemctl start tomcat9, 
+systemctl status tomcat9.
+
+
 *********************************************************************************************************************
 ---
 - hosts: dev 
