@@ -1,0 +1,64 @@
+build tomcat server using ansible playbooks
+************************************************
+
+---
+- hosts: 
+  sudo: yes
+  tasks:
+  - name: Install packages
+    package: name="{{ item }}" state=present
+	with_items:
+	- java 
+	- wget
+	- vim 
+	
+  - name: Download tomcat9
+    get_url: url=http://mirrors.estointernet.in/apache/tomcat/tomcat-9/v9.0.14/bin/apache-tomcat-9.0.14.tar.gz  dest=/home/centos validate_certs=no
+
+  - name: extract the files
+    unarchive: src=/home/centos/apache-tomcat-9.0.14.tar.gz dest=/opt 
+	
+  - name: Rename File
+    command: mv /opt/apache-tomcat-9.0.14 /opt/tomcat9
+
+  - name: create tomcat user with new home directory and nologin shell
+    user: name=tomcat home=/opt/tomcat9 shell=/sbin/nologin 
+	
+  - name: change ownership of tomcat files  
+    file: path=/opt/tomcat9 owner=tomcat recurse=yes 
+	
+  - name: tomcat start-script	
+	shell: /opt/tomcat9/bin/startup.sh
+
+  - name: tomcat stop-script	
+	shell: /opt/tomcat9/bin/shutdown.sh
+
+  - name: add lines in tomcat-users.xml for managing tomcat interface
+    lineinfile: dest=/opt/tomcat9/conf/tomcat-users.xml insertafter=EOF state=present  line={{ item }}
+	with_items:
+	- <role rolename="manager-gui"/>
+	- <role rolename="manager-scripts"/>
+	- <role rolename="manager-status"/>
+	- <user username="manager" password="12345" roles="manager-gui,manager-script,manager-status"/>
+	- <roles rolename="admin-gui"/>
+	- <user username="admin" password="12345" roles="admin-gui,manager-gui"/>
+	- </tomcat-users>
+	
+  - name: modifications in context.xml 
+    replace: path=/opt/tomcat9/webapps/manager/META-INF/context.xml regexp='<Valve' replace='<!-- <Valve'
+
+  - name: modifications in context.xml 
+	replace: path=/opt/tomcat9/webapps/manager/META-INF/context.xml regexp='0:0:0:0:0:0:0:1" />' replace='0:0:0:0:0:0:0:1" />-->'
+	
+  - name: modifications host-manger context.xml
+    replace: path=/opt/tomcat9/webapps/host-manager/META-INF/context.xml regexp='<Valve' replace='<!-- <Valve'
+
+  - name: modifications host-manger context.xml
+    replace: path=/opt/tomcat9/webapps/host-manager/META-INF/context.xml regexp='0:0:0:0:0:0:0:1" />' replace='0:0:0:0:0:0:0:1" />-->'  
+
+  - name: insert firewalld rule for tomcat http port
+    firewalld: port=8080/tcp permanent=true state=enabled immediate=yes
+  
+  - name: tomcat start-script	
+	shell: /opt/tomcat9/bin/startup.sh
+	

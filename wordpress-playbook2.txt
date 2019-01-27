@@ -1,0 +1,78 @@
+AUTOMATE INSTALLING WORDPRESS ON CENTOS
+************************************************************
+
+---
+- hosts: qa
+  become: yes
+  gather_facts: no
+  vars:
+    path: /var/www/html
+	url: https://wordpress.org/latest.tar.gz
+    user: suresh
+  
+  tasks:
+  - name: Install webserver database application
+    package: name="{{ item }}" state=present
+    with_items:
+    - epel-release
+    - httpd
+    - php
+    - php-mysql
+    - mariadb
+    - mariadb-server
+    - wget
+    - vim
+    - MySQL-python        	
+	
+  - name: start & enable services
+    service: name="{{ item }}" state=started enabled=yes
+    with_items:
+    - httpd
+    - mariadb
+
+  - name: make directory empty
+    shell: path={{ path }}/*  state=absent
+
+  - name: Download wordpress
+    get_url: url={{ url }}   dest=/home/{{ user }}  validate_certs=no
+
+  - name: Extract wordpress
+    unarchive: src=/home/{{ user }}/wordpress-5.0.3.tar.gz  dest={{ path }} remote_src=yes
+
+  - name: change the file ownership
+    file: path={{ path }}/wordpress owner=root group=root state=directory recurse=yes
+
+  - name: copy sample configuration file
+    copy: src={{ path }}/wordpress/wp-config-sample.php  dest={{ path }}/wordpress/wp-config.php remote_src=yes
+
+  - name: Update database credentials in the file
+    replace: dest="{{ path }}/wordpress/wp-config.php"  regexp="{{ item.regexp }}" replace="{{ item.replace }}"
+    with_items:
+    - { regexp: 'database_name_here', replace: 'wordpress' }
+    - { regexp: 'username_here', replace: 'guest' }
+    - { regexp: 'password_here', replace: 'abcd'}
+ 
+  - name: Create a new database with name wordpress
+    mysql_db: name=wordpress state=present 
+ 
+  - name: create a mysql_database_user with passsword
+    mysql_user: name=guest password=abcd  priv='*.*:ALL,GRANT'  state=present
+
+  - name: open webserverr  port
+    shell: "firewall-cmd --permanent --add-port=80/tcp"
+
+  - name: open databseport  port
+    shell: "firewall-cmd --permanent --add-port=3306/tcp"
+
+  - name: reload the firewall
+    shell: "firewall-cmd --reload"
+    notify: Restart httpd and mariadb	
+	
+  handlers:
+  - name: Restart httpd and mariadb
+    service: name="{{ item }}" state=restarted   
+	with_items:
+    - httpd
+    - mariadb
+ 
+  

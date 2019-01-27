@@ -1,0 +1,82 @@
+---
+- hosts: dev 
+  sudo: yes
+  vars_prompt: 
+  - name: user_name
+    prompt: specify your user name here
+  tasks:
+  - name: Install packages
+    package: name="{{ item }}" state=present
+    with_items:
+    - java 
+    - wget
+    - vim 
+        
+  - name: Download tomcat9
+    get_url: url=http://mirrors.estointernet.in/apache/tomcat/tomcat-9/v9.0.14/bin/apache-tomcat-9.0.14.tar.gz  dest=/home/{{ user_name }} validate_certs=no
+
+  - name: extract the files
+    unarchive: src=/home/{{ user_name }}/apache-tomcat-9.0.14.tar.gz dest=/opt remote_src=yes
+
+  - name: Rename File
+    command: mv /opt/apache-tomcat-9.0.14 /opt/tomcat9
+
+  - name: create tomcat user with new home directory and nologin shell
+    user: name=tomcat home=/opt/tomcat9 shell=/sbin/nologin 
+
+  - name: change ownership of tomcat files  
+    file: path=/opt/tomcat9 owner=tomcat recurse=yes 
+
+  - name: tomcat start-script   
+    shell: /opt/tomcat9/bin/startup.sh
+
+  - name: tomcat stop-script    
+    shell: /opt/tomcat9/bin/shutdown.sh
+
+  - name: add lines in tomcat-users.xml for managing tomcat interface
+    lineinfile: dest=/opt/tomcat9/conf/tomcat-users.xml insertafter=EOF state=present  line={{ item }}
+    with_items:
+    - <role rolename="manager-gui"/>
+    - <role rolename="manager-scripts"/>
+    - <role rolename="manager-status"/>
+    - <user username="manager" password="12345" roles="manager-gui,manager-script,manager-status"/>
+    - <roles rolename="admin-gui"/>
+    - <user username="admin" password="12345" roles="admin-gui,manager-gui"/>
+    - </tomcat-users>
+
+  - name: modifications in context.xml 
+    replace: path=/opt/tomcat9/webapps/manager/META-INF/context.xml regexp='<Valve' replace='<!-- <Valve'
+
+  - name: modifications in context.xml 
+    replace: path=/opt/tomcat9/webapps/manager/META-INF/context.xml regexp='0:0:0:0:0:0:0:1" />' replace='0:0:0:0:0:0:0:1" />-->'
+
+  - name: modifications host-manger context.xml
+    replace: path=/opt/tomcat9/webapps/host-manager/META-INF/context.xml regexp='<Valve' replace='<!-- <Valve'
+
+  - name: modifications host-manger context.xml
+    replace: path=/opt/tomcat9/webapps/host-manager/META-INF/context.xml regexp='0:0:0:0:0:0:0:1" />' replace='0:0:0:0:0:0:0:1" />-->'  
+
+  - name: create systemd for tomcat
+    copy: src=/home/kadhar/playbooks/tomcat_systemd dest=/usr/lib/systemd/system/tomcat9.service 
+    notify: start and stop
+
+  - name: Daemon_reload for tomcat 
+    systemd: daemon_reload=yes 
+
+  - name: open tomcat ports in firewall
+    command: firewall-cmd --permanent  --add-port=8080/tcp  --add-port=80/tcp
+ 
+  - name: firewalld reload
+    command: firewall-cmd --reload
+
+  - name: tomcat stop-script    
+    shell: /opt/tomcat9/bin/shutdown.sh
+
+  - name: tomcat start-script   
+    shell: /opt/tomcat9/bin/startup.sh 
+
+  handlers:
+  - name: start and stop
+    systemd: name=tomcat9 state="{{ item }}" enabled=yes
+    with_items:
+    - started  
