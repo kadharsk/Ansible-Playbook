@@ -1,3 +1,28 @@
+first below data save in one file in your dashboard and give the file name in playbook  
+- name: create systemd for tomcat
+  copy: src=/home/kadhar/playbooks/tomcat_systemd dest=/usr/lib/systemd/system/tomcat9.service 
+   
+vim /usr/lib/systemd/system/tomcat9.service 
+
+[Unit]
+Description=Apache Tomcat9
+After=network.target
+
+[Service]
+Type=oneshot
+ExecStart=/opt/tomcat9/bin/startup.sh
+ExecStop=/opt/tomcat9/bin/shutdown.sh
+#ExecStart=/usr/bin/authbind -deep "/opt/tomcat9/bin/startup.sh"
+#ExecStop=/usr/bin/authbind -deep  "/opt/tomcat9/bin/shutdown.sh"
+RemainAfterExit=yes
+User=tomcat
+Group=tomcat
+
+[Install]
+WantedBy=multi-user.target
+:wq
+systemctl daemon-reload,  systemctl enable tomcat9, systemctl start tomcat9, systemctl status tomcat9.
+*********************************************************************************************************************
 ---
 - hosts: dev 
   sudo: yes
