@@ -7,10 +7,10 @@ build tomcat server using ansible playbooks
   tasks:
   - name: Install packages
     package: name="{{ item }}" state=present
-	with_items:
-	- java 
-	- wget
-	- vim 
+    with_items:
+    - java 
+    - wget
+    - vim 
 	
   - name: Download tomcat9
     get_url: url=http://mirrors.estointernet.in/apache/tomcat/tomcat-9/v9.0.14/bin/apache-tomcat-9.0.14.tar.gz  dest=/home/centos validate_certs=no
@@ -28,16 +28,16 @@ build tomcat server using ansible playbooks
     file: path=/opt/tomcat9 owner=tomcat recurse=yes 
 	
   - name: tomcat start-script	
-	shell: /opt/tomcat9/bin/startup.sh
+    shell: /opt/tomcat9/bin/startup.sh
 
   - name: tomcat stop-script	
-	shell: /opt/tomcat9/bin/shutdown.sh
+    shell: /opt/tomcat9/bin/shutdown.sh
 
   - name: add lines in tomcat-users.xml for managing tomcat interface
     lineinfile: dest=/opt/tomcat9/conf/tomcat-users.xml insertafter=EOF state=present  line={{ item }}
-	with_items:
-	- <role rolename="manager-gui"/>
-	- <role rolename="manager-scripts"/>
+    with_items:
+    - <role rolename="manager-gui"/>
+    - <role rolename="manager-scripts"/>
 	- <role rolename="manager-status"/>
 	- <user username="manager" password="12345" roles="manager-gui,manager-script,manager-status"/>
 	- <roles rolename="admin-gui"/>
