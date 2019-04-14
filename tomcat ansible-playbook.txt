@@ -38,17 +38,17 @@ build tomcat server using ansible playbooks
     with_items:
     - <role rolename="manager-gui"/>
     - <role rolename="manager-scripts"/>
-	- <role rolename="manager-status"/>
-	- <user username="manager" password="12345" roles="manager-gui,manager-script,manager-status"/>
-	- <roles rolename="admin-gui"/>
-	- <user username="admin" password="12345" roles="admin-gui,manager-gui"/>
-	- </tomcat-users>
+    - <role rolename="manager-status"/>
+    - <user username="manager" password="12345" roles="manager-gui,manager-script,manager-status"/>
+    - <roles rolename="admin-gui"/>
+    - <user username="admin" password="12345" roles="admin-gui,manager-gui"/>
+    - </tomcat-users>
 	
   - name: modifications in context.xml 
     replace: path=/opt/tomcat9/webapps/manager/META-INF/context.xml regexp='<Valve' replace='<!-- <Valve'
 
   - name: modifications in context.xml 
-	replace: path=/opt/tomcat9/webapps/manager/META-INF/context.xml regexp='0:0:0:0:0:0:0:1" />' replace='0:0:0:0:0:0:0:1" />-->'
+    replace: path=/opt/tomcat9/webapps/manager/META-INF/context.xml regexp='0:0:0:0:0:0:0:1" />' replace='0:0:0:0:0:0:0:1" />-->'
 	
   - name: modifications host-manger context.xml
     replace: path=/opt/tomcat9/webapps/host-manager/META-INF/context.xml regexp='<Valve' replace='<!-- <Valve'
@@ -60,5 +60,4 @@ build tomcat server using ansible playbooks
     firewalld: port=8080/tcp permanent=true state=enabled immediate=yes
   
   - name: tomcat start-script	
-	shell: /opt/tomcat9/bin/startup.sh
-	
+    shell: /opt/tomcat9/bin/startup.sh	
